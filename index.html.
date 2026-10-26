@@ -1,0 +1,839 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foxglove | Forest Companion</title>
+
+<style>
+:root {
+  --bg: #101c1b;
+  --panel: #1b2b27;
+  --panel2: #253831;
+  --green: #b5c99a;
+  --cream: #eee8d5;
+  --gold: #d6b987;
+  --muted: #bdcbb8;
+  --pink: #d6a5a0;
+  --border: #40564a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 18px;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.app { max-width: 760px; margin: auto; }
+
+header {
+  text-align: center;
+  padding: 25px 12px;
+}
+
+h1 { color: var(--gold); font-size: 2.5rem; margin: 0; }
+h2 { color: var(--green); font-size: 1.25rem; }
+h3 { color: var(--gold); }
+p { margin: 8px 0; }
+.subtitle, .muted { color: var(--muted); }
+
+.fox {
+  font-size: 76px;
+  line-height: 1.4;
+  filter: drop-shadow(0 0 14px #9b704044);
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.stat {
+  background: var(--panel2);
+  border-radius: 12px;
+  padding: 13px 6px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.stat strong {
+  display: block;
+  color: var(--gold);
+  font-size: 1.35rem;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  background: var(--green);
+  color: #17251d;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 15px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover { filter: brightness(1.08); }
+button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+button.secondary {
+  background: var(--panel2);
+  color: var(--cream);
+  border: 1px solid var(--border);
+}
+
+input:not([type="checkbox"]), select, textarea {
+  width: 100%;
+  background: #101c1b;
+  color: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 11px;
+  margin: 5px 0 12px;
+}
+
+input[type="checkbox"] {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--green);
+  flex-shrink: 0;
+}
+
+label { color: var(--cream); }
+.field-label { display: block; margin-top: 8px; }
+
+.quest {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px;
+  border-bottom: 1px solid var(--border);
+}
+
+.quest label { flex: 1; cursor: pointer; }
+.quest:last-child { border-bottom: 0; }
+
+.progress-track {
+  height: 13px;
+  background: #304139;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+#progress {
+  height: 100%;
+  width: 0;
+  background: var(--green);
+  transition: width .25s;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.row > * { flex: 1; min-width: 0; }
+
+.entry {
+  background: var(--panel2);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+
+.entry button { margin-top: 7px; }
+
+.reward {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0;
+}
+
+.reward.unlocked { border-color: var(--gold); }
+
+.notice { color: var(--muted); font-size: .9rem; }
+
+footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: .85rem;
+  padding: 20px 0;
+}
+
+@media (max-width: 430px) {
+  body { padding: 10px; }
+  .card { padding: 15px; }
+  .stats { gap: 6px; }
+  .stat { padding: 10px 3px; font-size: .85rem; }
+  .stat strong { font-size: 1.1rem; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="fox" aria-label="Fox">🦊</div>
+  <h1>Foxglove</h1>
+  <p class="subtitle">Your little companion in the forest.</p>
+  <p><em>Small steps. Steady progress.</em></p>
+</header>
+
+<section class="card">
+  <h2>🌙 Your forest today</h2>
+  <p id="today"></p>
+  <p id="buddyMessage">Welcome back, forest friend!</p>
+
+  <div class="stats">
+    <div class="stat">
+      <strong id="level">1</strong>
+      Forest level
+    </div>
+    <div class="stat">
+      <strong id="xp">0</strong>
+      Total XP
+    </div>
+    <div class="stat">
+      <strong id="done">0/5</strong>
+      Today's quests
+    </div>
+  </div>
+
+  <p id="levelProgressText" class="muted"></p>
+  <div class="progress-track">
+    <div id="levelProgress" style="height:100%;width:0%;background:var(--gold)"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>🌿 Today's forest quests</h2>
+  <p class="muted">Earn 10 XP for each completed habit.</p>
+
+  <div id="quests">
+    <div class="quest">
+      <input id="q0" type="checkbox">
+      <label for="q0">Eat regular, satisfying meals</label>
+    </div>
+    <div class="quest">
+      <input id="q1" type="checkbox">
+      <label for="q1">Check in with my hunger and fullness</label>
+    </div>
+    <div class="quest">
+      <input id="q2" type="checkbox">
+      <label for="q2">Respond kindly to a craving</label>
+    </div>
+    <div class="quest">
+      <input id="q3" type="checkbox">
+      <label for="q3">Take a movement or fresh-air break, if able</label>
+    </div>
+    <div class="quest">
+      <input id="q4" type="checkbox">
+      <label for="q4">Make time for rest or something I enjoy</label>
+    </div>
+  </div>
+
+  <div class="progress-track">
+    <div id="progress"></div>
+  </div>
+  <p id="questMessage" aria-live="polite">Choose one small step.</p>
+</section>
+
+<section class="card">
+  <h2>🍫 Help me with a sweet craving</h2>
+  <p>Cravings aren't failures. Let's figure out what might help.</p>
+
+  <label class="field-label" for="cravingType">What might be going on?</label>
+  <select id="cravingType">
+    <option value="sweet">I just really want something sweet</option>
+    <option value="hungry">I'm physically hungry</option>
+    <option value="stress">I'm stressed or overwhelmed</option>
+    <option value="bored">I'm bored or looking for stimulation</option>
+    <option value="tired">I'm tired or low on energy</option>
+    <option value="restrict">I've been trying not to eat sweets</option>
+  </select>
+
+  <button id="cravingButton">Help me choose my next step</button>
+  <div id="cravingAnswer" class="entry" aria-live="polite">
+    Your fox is here whenever you need a moment.
+  </div>
+</section>
+
+<section class="card">
+  <h2>🍎 Meals & snacks journal</h2>
+  <p class="muted">Record what you ate without judging it or needing to count calories.</p>
+
+  <form id="mealForm">
+    <label class="field-label" for="mealType">Entry type</label>
+    <select id="mealType">
+      <option>Meal</option>
+      <option>Snack</option>
+      <option>Drink</option>
+      <option>Treat</option>
+    </select>
+
+    <label class="field-label" for="mealText">What did you have?</label>
+    <input id="mealText" maxlength="250" placeholder="e.g. tuna sandwich and fruit" required>
+
+    <label class="field-label" for="mealFeeling">Anything you noticed? (optional)</label>
+    <select id="mealFeeling">
+      <option value="">Skip this</option>
+      <option>Comfortably satisfied</option>
+      <option>Still hungry</option>
+      <option>Very hungry beforehand</option>
+      <option>Enjoyed it</option>
+      <option>Ate while stressed</option>
+    </select>
+
+    <button type="submit">Save food journal entry</button>
+  </form>
+
+  <h3>Today's entries</h3>
+  <div id="mealList"></div>
+</section>
+
+<section class="card">
+  <h2>💚 Mood & hunger check-in</h2>
+  <p>There's no right answer. This is just information about how you're feeling.</p>
+
+  <label class="field-label" for="mood">How are you feeling?</label>
+  <select id="mood">
+    <option value="">Choose a mood...</option>
+    <option>Happy</option>
+    <option>Calm</option>
+    <option>Motivated</option>
+    <option>Stressed</option>
+    <option>Overwhelmed</option>
+    <option>Sad</option>
+    <option>Bored</option>
+    <option>Tired</option>
+    <option>Other</option>
+  </select>
+
+  <label class="field-label" for="hunger">How hungry are you?</label>
+  <select id="hunger">
+    <option value="">Choose an option...</option>
+    <option>Not hungry right now</option>
+    <option>A little hungry</option>
+    <option>Moderately hungry</option>
+    <option>Very hungry</option>
+    <option>Unsure</option>
+    <option>I'd rather not say</option>
+  </select>
+
+  <label class="field-label" for="reflection">Anything else on your mind? (optional)</label>
+  <textarea id="reflection" rows="3" maxlength="1000"
+    placeholder="What went well? What was difficult?"></textarea>
+
+  <button id="saveCheckin">Save check-in</button>
+  <p id="checkinMessage" aria-live="polite"></p>
+</section>
+
+<section class="card">
+  <h2>✨ Your forest rewards</h2>
+  <p>Every 100 XP brings a new level. XP comes from completing habits across your days.</p>
+  <div id="rewards"></div>
+</section>
+
+<section class="card">
+  <h2>🌱 Optional weight journal</h2>
+  <p class="muted">Only use this if it feels helpful. Your worth is not a number, and you can skip weighing yourself entirely.</p>
+
+  <form id="weightForm">
+    <label class="field-label" for="weight">Weight</label>
+    <input id="weight" type="number" min="1" max="1500" step="0.1"
+      placeholder="Enter weight" required>
+
+    <label class="field-label" for="weightUnit">Unit</label>
+    <select id="weightUnit">
+      <option value="lb">Pounds (lb)</option>
+      <option value="kg">Kilograms (kg)</option>
+    </select>
+
+    <button type="submit">Save weight entry</button>
+  </form>
+
+  <h3>Recent entries</h3>
+  <div id="weightList"></div>
+</section>
+
+<section class="card">
+  <h2>🌌 Your forest journal</h2>
+  <p class="muted">A simple overview of your recent check-ins.</p>
+  <div id="history"></div>
+</section>
+
+<section class="card">
+  <h2>🛡️ Your data</h2>
+  <p class="notice">Your entries are stored in this browser on this device. They are not synced to an account. Clearing browser data may erase them.</p>
+  <button id="exportData" class="secondary">Export my data</button>
+  <button id="clearData" class="secondary">Erase all my data</button>
+  <p id="dataMessage" aria-live="polite"></p>
+</section>
+
+<footer>
+  Made for steady progress, not perfection. 🌲<br>
+  Eat enough, enjoy your treats, and be kind to yourself.
+</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEY = "foxglove_complete_v1";
+  const habitCount = 5;
+
+  const habitNames = [
+    "Eat regular, satisfying meals",
+    "Check in with my hunger and fullness",
+    "Respond kindly to a craving",
+    "Take a movement or fresh-air break",
+    "Make time for rest or something enjoyable"
+  ];
+
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" +
+      String(d.getMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getDate()).padStart(2, "0");
+  }
+
+  function newDay() {
+    return {
+      habits: Array(habitCount).fill(false),
+      meals: [],
+      mood: "",
+      hunger: "",
+      reflection: "",
+      checkinSaved: false
+    };
+  }
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data && data.days && Array.isArray(data.weights)) {
+          return data;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load saved data.", e);
+    }
+
+    return { days: {}, weights: [] };
+  }
+
+  let data = loadData();
+  let dateKey = todayKey();
+
+  function getDay() {
+    if (!data.days[dateKey]) data.days[dateKey] = newDay();
+
+    const day = data.days[dateKey];
+
+    if (!Array.isArray(day.habits) || day.habits.length !== habitCount) {
+      day.habits = Array(habitCount).fill(false);
+    }
+
+    if (!Array.isArray(day.meals)) day.meals = [];
+    return day;
+  }
+
+  function saveData() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    } catch (e) {
+      document.getElementById("dataMessage").textContent =
+        "Your browser could not save the data. Try exporting it or freeing browser storage.";
+      return false;
+    }
+  }
+
+  function el(id) {
+    return document.getElementById(id);
+  }
+
+  function addText(parent, tag, text, className) {
+    const node = document.createElement(tag);
+    node.textContent = text;
+    if (className) node.className = className;
+    parent.appendChild(node);
+    return node;
+  }
+
+  function countCompleted(day) {
+    return day.habits.filter(Boolean).length;
+  }
+
+  function totalXP() {
+    return Object.values(data.days).reduce(function (sum, day) {
+      return sum + (Array.isArray(day.habits)
+        ? day.habits.filter(Boolean).length * 10
+        : 0);
+    }, 0);
+  }
+
+  function renderHeader() {
+    const d = new Date(dateKey + "T12:00:00");
+    el("today").textContent = d.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    const xp = totalXP();
+    const level = Math.floor(xp / 100) + 1;
+    const withinLevel = xp % 100;
+    const completed = countCompleted(getDay());
+
+    el("level").textContent = level;
+    el("xp").textContent = xp;
+    el("done").textContent = completed + "/" + habitCount;
+    el("levelProgressText").textContent =
+      withinLevel + " / 100 XP toward level " + (level + 1);
+    el("levelProgress").style.width = withinLevel + "%";
+
+    if (completed === habitCount) {
+      el("buddyMessage").textContent =
+        "The forest is glowing! You showed up for yourself today. 🌟";
+    } else if (completed > 0) {
+      el("buddyMessage").textContent =
+        "Look at you making progress. One step at a time. 🌿";
+    } else {
+      el("buddyMessage").textContent =
+        "Welcome back, forest friend. Let's start small. 🦊";
+    }
+  }
+
+  function renderQuests() {
+    const day = getDay();
+    const completed = countCompleted(day);
+
+    day.habits.forEach(function (checked, index) {
+      el("q" + index).checked = checked;
+    });
+
+    el("progress").style.width =
+      (completed / habitCount * 100) + "%";
+
+    el("questMessage").textContent = completed === habitCount
+      ? "All five quests complete! Rest and celebrate if you like. 🌟"
+      : completed > 0
+        ? "You've completed " + completed +
+          " quest" + (completed === 1 ? "" : "s") +
+          ". Every step counts."
+        : "Choose one small step to begin your adventure.";
+  }
+
+  function renderMeals() {
+    const list = el("mealList");
+    list.replaceChildren();
+
+    const meals = getDay().meals;
+
+    if (!meals.length) {
+      addText(list, "p", "No entries yet. Add one whenever you'd like.", "muted");
+      return;
+    }
+
+    meals.slice().reverse().forEach(function (meal) {
+      const card = addText(list, "div", "", "entry");
+      addText(card, "strong", meal.type + ": " + meal.text);
+      if (meal.feeling) addText(card, "p", meal.feeling);
+
+      const remove = addText(card, "button", "Delete entry", "secondary");
+      remove.type = "button";
+      remove.addEventListener("click", function () {
+        if (!confirm("Delete this journal entry?")) return;
+        const index = getDay().meals.findIndex(function (m) {
+          return m.id === meal.id;
+        });
+        if (index !== -1) getDay().meals.splice(index, 1);
+        saveData();
+        renderMeals();
+        renderHistory();
+      });
+    });
+  }
+
+  function renderCheckin() {
+    const day = getDay();
+    el("mood").value = day.mood || "";
+    el("hunger").value = day.hunger || "";
+    el("reflection").value = day.reflection || "";
+    el("checkinMessage").textContent = day.checkinSaved
+      ? "Your check-in is saved. Thanks for checking in with yourself. 💚"
+      : "";
+  }
+
+  function renderRewards() {
+    const root = el("rewards");
+    root.replaceChildren();
+
+    const xp = totalXP();
+    const rewards = [
+      { at: 0, title: "First Footsteps", detail: "Your forest journey begins." },
+      { at: 100, title: "Mossy Trail", detail: "You've built up your first 100 XP." },
+      { at: 200, title: "Moonlit Path", detail: "You're building a steady routine." },
+      { at: 300, title: "Forest Friend", detail: "Your fox is growing with you." },
+      { at: 500, title: "Guardian of the Grove", detail: "A mighty milestone of consistency." },
+      { at: 1000, title: "Heart of the Forest", detail: "A whole forest of small steps." }
+    ];
+
+    rewards.forEach(function (reward) {
+      const unlocked = xp >= reward.at;
+      const card = addText(root, "div", "", "reward" + (unlocked ? " unlocked" : ""));
+      addText(card, "strong", (unlocked ? "🌟 " : "🔒 ") + reward.title);
+      addText(card, "p", reward.detail + " (" + reward.at + " XP)");
+    });
+
+    addText(root, "p",
+      "Your rewards are for consistency, not for eating less or ignoring hunger.",
+      "notice");
+  }
+
+  function renderWeights() {
+    const root = el("weightList");
+    root.replaceChildren();
+
+    const entries = data.weights.slice().sort(function (a, b) {
+      return b.date.localeCompare(a.date);
+    });
+
+    if (!entries.length) {
+      addText(root, "p", "No weight entries. That's completely okay.", "muted");
+      return;
+    }
+
+    entries.slice(0, 10).forEach(function (entry) {
+      const card = addText(root, "div", "", "entry");
+      addText(card, "strong",
+        entry.value + " " + entry.unit + " — " + entry.date);
+
+      const remove = addText(card, "button", "Delete entry", "secondary");
+      remove.type = "button";
+      remove.addEventListener("click", function () {
+        if (!confirm("Delete this weight entry?")) return;
+        data.weights = data.weights.filter(function (w) {
+          return w.id !== entry.id;
+        });
+        saveData();
+        renderWeights();
+      });
+    });
+
+    if (entries.length >= 2) {
+      const sameUnit = entries.filter(function (e) {
+        return e.unit === entries[0].unit;
+      });
+
+      if (sameUnit.length >= 2) {
+        const newest = sameUnit[0];
+        const oldest = sameUnit[sameUnit.length - 1];
+        const difference = Number(newest.value) - Number(oldest.value);
+        const sign = difference > 0 ? "+" : "";
+        addText(root, "p",
+          "Change between these entries: " + sign +
+          difference.toFixed(1) + " " + newest.unit +
+          ". Normal fluctuations are expected; this isn't a judgment.",
+          "notice");
+      }
+    }
+  }
+
+  function renderHistory() {
+    const root = el("history");
+    root.replaceChildren();
+
+    const keys = Object.keys(data.days).sort().reverse().slice(0, 7);
+
+    if (!keys.length) {
+      addText(root, "p", "Your check-in history will appear here.", "muted");
+      return;
+    }
+
+    keys.forEach(function (key) {
+      const day = data.days[key];
+      const card = addText(root, "div", "", "entry");
+      addText(card, "strong", key);
+      addText(card, "p",
+        countCompleted(day) + "/" + habitCount + " habits completed · " +
+        day.meals.length + " food journal entries");
+      if (day.mood) addText(card, "p", "Mood: " + day.mood);
+      if (day.hunger) addText(card, "p", "Hunger: " + day.hunger);
+      if (day.reflection) addText(card, "p", "Note: " + day.reflection);
+
+      const view = addText(card, "button", "Open this day", "secondary");
+      view.type = "button";
+      view.addEventListener("click", function () {
+        dateKey = key;
+        renderAll();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+
+    if (dateKey !== todayKey()) {
+      const back = addText(root, "button", "Return to today");
+      back.type = "button";
+      back.addEventListener("click", function () {
+        dateKey = todayKey();
+        renderAll();
+      });
+    }
+  }
+
+  function renderAll() {
+    renderHeader();
+    renderQuests();
+    renderMeals();
+    renderCheckin();
+    renderRewards();
+    renderWeights();
+    renderHistory();
+  }
+
+  for (let i = 0; i < habitCount; i++) {
+    el("q" + i).addEventListener("change", function () {
+      getDay().habits[i] = el("q" + i).checked;
+      saveData();
+      renderHeader();
+      renderQuests();
+      renderRewards();
+      renderHistory();
+    });
+  }
+
+  el("cravingButton").addEventListener("click", function () {
+    const answers = {
+      sweet: "It's okay to want something sweet. You can choose a treat and enjoy it without guilt. If you want ideas, fruit, yogurt with toppings, chocolate, or a favorite dessert can all fit into a balanced life.",
+      hungry: "If you're hungry, try having a satisfying meal or snack. Pairing foods you enjoy with something filling can help. You don't need to ignore hunger to reach a goal.",
+      stress: "Pause for a moment and take a few slow breaths. Ask yourself what would help: food, a break, talking to someone, or a little quiet. You can eat and also care for the stress underneath.",
+      bored: "You might want stimulation, a treat, or both! You could get a snack you enjoy, listen to a favorite song, doodle, or take a tiny change-of-scene break. No need to earn food.",
+      tired: "Tiredness can make cravings feel stronger. If you're hungry, eat something satisfying. If possible, take a break, get comfortable, and consider whether you need rest or sleep.",
+      restrict: "Trying to forbid sweets can make them feel even more important. You can give yourself permission to enjoy sweets as part of regular eating. One treat doesn't ruin anything."
+    };
+
+    el("cravingAnswer").textContent =
+      answers[el("cravingType").value] || answers.sweet;
+  });
+
+  el("mealForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const text = el("mealText").value.trim();
+    if (!text) return;
+
+    getDay().meals.push({
+      id: Date.now().toString() + Math.random().toString(16).slice(2),
+      type: el("mealType").value,
+      text: text,
+      feeling: el("mealFeeling").value
+    });
+
+    saveData();
+    el("mealText").value = "";
+    el("mealFeeling").value = "";
+    renderMeals();
+    renderHistory();
+  });
+
+  el("saveCheckin").addEventListener("click", function () {
+    const day = getDay();
+    day.mood = el("mood").value;
+    day.hunger = el("hunger").value;
+    day.reflection = el("reflection").value.trim();
+    day.checkinSaved = true;
+    saveData();
+    renderCheckin();
+    renderHistory();
+  });
+
+  el("weightForm").addEventListener("submit", function (event) {
+    event.preventDefault();
+    const value = Number(el("weight").value);
+
+    if (!Number.isFinite(value) || value <= 0 || value > 1500) {
+      el("dataMessage").textContent = "Please enter a valid weight.";
+      return;
+    }
+
+    data.weights.push({
+      id: Date.now().toString() + Math.random().toString(16).slice(2),
+      date: todayKey(),
+      value: value,
+      unit: el("weightUnit").value
+    });
+
+    saveData();
+    el("weight").value = "";
+    el("dataMessage").textContent = "Weight entry saved.";
+    renderWeights();
+  });
+
+  el("exportData").addEventListener("click", function () {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "foxglove-backup.json";
+    link.click();
+    URL.revokeObjectURL(url);
+
+    el("dataMessage").textContent =
+      "Export requested. Keep your backup somewhere safe.";
+  });
+
+  el("clearData").addEventListener("click", function () {
+    const confirmed = confirm(
+      "This permanently erases all Foxglove journal entries, habits, XP, and weight data saved by this app in this browser. Export a backup first if you want to keep it. Continue?"
+    );
+
+    if (!confirmed) return;
+
+    data = { days: {}, weights: [] };
+    dateKey = todayKey();
+    saveData();
+    el("dataMessage").textContent = "Your Foxglove data has been cleared.";
+    renderAll();
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
